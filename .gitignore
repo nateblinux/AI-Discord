@@ -1,8 +1,6 @@
-#ignore all files
-*/**
-
-#except for bot, env example, gitignore
-!ai.py
-!.env.example
-!.gitignore
-!README.md
+.env
+lib64
+pyvenv.cfg
+lib
+bin
+include
