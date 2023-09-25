@@ -1,3 +1,10 @@
+#!/usr/bin/env python
+'''
+Jobs for humanity discord bot for upskilling/language and housing support using chatgpt and/or google bard
+Version: 0.0.1
+Author: Nathan Benham
+'''
+
 import openai
 import discord
 import random
@@ -11,14 +18,26 @@ openai.api_key = os.getenv('OPEN_AI_KEY')
 DISCORD_TOKEN = os.getenv('DISCORD_TOKEN')
 BARD_TOKEN = os.getenv('BARD_TOKEN')
 
-#initialize messages for chatgpt:
-messages=[{"role": "system", "content": "you have now been integrated into discord to act as a friendly chatbot"}]
 #max characters that discord allows per message
 DISCORD_MAX_CHARS = 2000
 
 #initialize classes
 client = discord.Client(intents=discord.Intents.default())
 bard = Bard(token = BARD_TOKEN)
+
+#PROMPT ENGINEERING STRINGS:
+#initialize messages for chatgpt:
+messages=[{"role": "system", "content": "Your job is to aid under represented communties find housing and jobs. You should answer questions as concisely as possible. Keep all responses under 1999 characters. If you are asked a question about something other than housing or upskilling you should not answer. "}]
+
+#header strings to append to each message:
+gpt_prompt_header = "##INSTRUCTION## answer the following question in 2000 characters or less: question: "
+bard_prompt_header = "##INSTRUCTION## Your job is to aid under represented communties find housing and jobs. You should answer questions as concisely as possible. Keep all responses under 1999 characters. If you are asked a question about something other than housing or upskilling you should not answer : question: "
+
+#footer strings:
+gpt_prompt_footer = ""
+bard_prompt_footer = ""
+
+#DISCORD CONNECTION:
 
 #connect to discord:
 @client.event 
@@ -39,8 +58,13 @@ async def on_message(message):
     ##OPENAI##
     await message.channel.send("Begin gpt response ")
 
+    #assemble prompt:
+    prompt = gpt_prompt_header + message.content + gpt_prompt_footer
+
+    print(prompt)
+
     #track previous messages in conversation
-    messages.append({"role": "user", "content": message.content})
+    messages.append({"role": "user", "content": prompt})
     chat_completion = openai.ChatCompletion.create(model="gpt-3.5-turbo", messages=messages)
     print(chat_completion.choices[0].message.content)
 
@@ -64,9 +88,13 @@ async def on_message(message):
     ##BARD all logic same as gpt##
     await message.channel.send("Begin bard response ")
 
-    chat = bard.get_answer(message.content)
+    prompt = bard_prompt_header + message.content + bard_prompt_footer
+
+    print(prompt)
+
+    chat = bard.get_answer(prompt)
     message_content = chat['content']
-    print(message_content)
+    print(chat)
 
     res_len = len(message_content)
 
