@@ -27,15 +27,21 @@ bard = Bard(token = BARD_TOKEN)
 
 #PROMPT ENGINEERING STRINGS:
 #initialize messages for chatgpt:
-messages=[{"role": "system", "content": "Your job is to aid under represented communties find housing and jobs. You should answer questions as concisely as possible. Keep all responses under 1999 characters. If you are asked a question about something other than housing or upskilling you should not answer. "}]
+messages=[{"role": "system", "content": "Your job is to aid under represented communties find housing and \
+ jobs. You should answer questions as concisely as possible. Keep all responses under 1999 characters. \
+ If you are asked a question about something other than housing or upskilling you should not answer. "}]
 
 #header strings to append to each message:
 gpt_prompt_header = "##INSTRUCTION## answer the following question in 2000 characters or less: question: "
-bard_prompt_header = "##INSTRUCTION## Your job is to aid under represented communties find housing and jobs. You should answer questions as concisely as possible. Keep all responses under 1999 characters. If you are asked a question about something other than housing or upskilling you should not answer : question: "
+bard_prompt_header = "##INSTRUCTION## Your job is to aid under represented communties find jobs. \
+you answer questions about upskilling for jobs, as well as langauge courses. \
+You should answer questions as concisely as possible. Keep all responses under 1999 characters. \
+If you are asked a question about something other than languages or upskilling you should not answer. \
+The question is surrounded by triple backticks. Give links or contact information to resources whenever it is possible ```"
 
 #footer strings:
 gpt_prompt_footer = ""
-bard_prompt_footer = ""
+bard_prompt_footer = "```"
 
 #DISCORD CONNECTION:
 
