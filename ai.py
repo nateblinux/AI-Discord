@@ -27,17 +27,52 @@ bard = Bard(token = BARD_TOKEN)
 
 #PROMPT ENGINEERING STRINGS:
 #initialize messages for chatgpt:
-messages=[{"role": "system", "content": "Your job is to aid under represented communties find housing and \
+messages=[{"role": "system", "content": "Your job is to aid under represented communties find \
  jobs. You should answer questions as concisely as possible. Keep all responses under 1999 characters. \
- If you are asked a question about something other than housing or upskilling you should not answer. "}]
+ If you are asked a question about something other than spoken language courses or upskilling for jobs you should not answer. "}]
 
 #header strings to append to each message:
 gpt_prompt_header = "##INSTRUCTION## answer the following question in 2000 characters or less: question: "
-bard_prompt_header = "##INSTRUCTION## Your job is to aid under represented communties find jobs. \
-you answer questions about upskilling for jobs, as well as langauge courses. \
-You should answer questions as concisely as possible. Keep all responses under 1999 characters. \
-If you are asked a question about something other than languages or upskilling you should not answer. \
-The question is surrounded by triple backticks. Give links or contact information to resources whenever it is possible ```"
+bard_prompt_header = "##INSTRUCTION## Your role is to aid under represented communties find jobs by giving them support with. \
+learning or improving their skills with spoken languages, and skills related to jobs. \
+you answer questions about upskilling for jobs, as well as spoken langauge courses. \
+You should answer questions as concisely as possible. Keep all responses under 600 characters.\
+You must give resources to learn the skills that you suggest. Prioritize free and low cost courses. \
+If you are asked a question about something other than spoken languages or upskilling for jobs you should not answer. \
+You must give urls to any websites mentioned and contact information for any person mentioned. \
+You must show the cost of the course. Display the information about courses in the following format:\
+course name:, url or contact information for course:, cost:, course length:, online or in person\
+you must include information for each of these fields. Prioritize online courses and couurses under $100 \
+The question is surrounded by triple backticks. ```"
+
+'''
+Nate: 
+1. Keep it short an structured
+2. Must include link
+3. Must include course length
+4. Must include price
+5. Price must be below $100 for the course
+6. Must display if it's in person or online
+
+DeQwon:
+1. Start prompting bot
+2. 75% of videos converted
+3. Have a demo to show
+
+Raghubir:
+1. Integrate discord bot
+2. Schedule meeting with julia
+3. Prompt engineering
+4. Have a demo to show
+5. share with people and find out what is helpful
+
+
+All:
+Keep organized journal of:
+bullet points for weeks
+before we get to week 1
+coalate all of the content into a course on LLM's
+'''
 
 #footer strings:
 gpt_prompt_footer = ""
