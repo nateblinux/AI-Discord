@@ -11,6 +11,7 @@ import random
 import os
 from dotenv import load_dotenv
 from bardapi import Bard
+from datetime import datetime
 
 #load .env values
 load_dotenv()
@@ -27,21 +28,80 @@ bard = Bard(token = BARD_TOKEN)
 
 #PROMPT ENGINEERING STRINGS:
 #initialize messages for chatgpt:
-messages=[{"role": "system", "content": "Your job is to aid under represented communties find housing and \
- jobs. You should answer questions as concisely as possible. Keep all responses under 1999 characters. \
- If you are asked a question about something other than housing or upskilling you should not answer. "}]
+messages=[{"role": "system", "content": "Your job is to aid under represented communties find \
+ jobs. You should answer questions as concisely as possible. Keep all responses under 600 characters. \
+ If you are asked a question about something other than spoken language courses or upskilling for jobs you should not answer. "}]
 
 #header strings to append to each message:
-gpt_prompt_header = "##INSTRUCTION## answer the following question in 2000 characters or less: question: "
-bard_prompt_header = "##INSTRUCTION## Your job is to aid under represented communties find jobs. \
-you answer questions about upskilling for jobs, as well as langauge courses. \
-You should answer questions as concisely as possible. Keep all responses under 1999 characters. \
-If you are asked a question about something other than languages or upskilling you should not answer. \
-The question is surrounded by triple backticks. Give links or contact information to resources whenever it is possible ```"
+gpt_prompt_header = "##INSTRUCTION## answer the following question in 600 characters or less: question: "
+bard_prompt_header = "##INSTRUCTION## Your role is to aid under represented communties find jobs by giving them support with. \
+learning or improving their skills with spoken languages, and skills related to jobs. \
+you answer questions about upskilling for jobs, as well as spoken langauge courses. \
+You should answer as concisely as possible. Keep all responses under 600 characters.\
+If you are asked a question about something other than spoken languages or upskilling for jobs you should not answer. \
+First gather the following information about 3 - 7 courses that would be best for the user: 1. Course Name, 2. URL for course or contact information to sign up, \
+3. Cost of course, 4. duration of course, 5. if the course is in person or online, 6. if in person course location. \
+ You must give a response for each of these fields.\
+ Prioritize free courses and courses under $100\
+Give the response in the format: Course name, Course URL, Cost, Duration, Online or in person, location. Give these responses as bullet points\
+Then give a recommendation to the user as to which of these courses would be best for them in 1 - 4 sentences. If the question seems like it is a follow\
+up look at prevous questions to gain context and answer to the best of your ability. If the question seems to be simply a job description or resume you should ask how you can help ```"
+
+'''
+Nate: 
+1. Keep it short an structured
+2. Must include link
+3. Must include course length
+4. Must include price
+5. Price must be below $100 for the course
+6. Must display if it's in person or online
+
+DeQwon:
+1. Start prompting bot
+2. 75% of videos converted
+3. Have a demo to show
+
+Raghubir:
+1. Integrate discord bot
+2. Schedule meeting with julia
+3. Prompt engineering
+4. Have a demo to show
+5. share with people and find out what is helpful
+
+
+All:
+Keep organized journal of:
+bullet points for weeks
+before we get to week 1
+coalate all of the content into a course on LLM's
+'''
 
 #footer strings:
 gpt_prompt_footer = ""
 bard_prompt_footer = "```"
+
+#logging info:
+file_name = "bot-log.txt"
+log_file = open(file_name, "a")
+
+def get_bard_response(prompt):
+    try:
+        chat = bard.get_answer(prompt)
+        message_content = chat['content']
+        print(chat)
+        log_file.write(f'{prompt} \n {message_content} \n ----->')
+        return message_content
+    except Exception as err:
+        return err
+
+def get_gpt_response(prompt):
+    global messages
+    try:
+        messages.append({"role": "user", "content": prompt})
+        chat_completion = openai.ChatCompletion.create(model="gpt-3.5-turbo", messages=messages)
+        return chat_completion.choices[0].message.content
+    except Exception as err:
+        return err
 
 #DISCORD CONNECTION:
 
@@ -53,7 +113,6 @@ async def on_ready():
 #on message recieve 
 @client.event
 async def on_message(message):
-    global messages
 
     #dont respond to own messages or empty messages
     if message.author == client.user or not message.content:
@@ -66,55 +125,15 @@ async def on_message(message):
 
     #assemble prompt:
     prompt = gpt_prompt_header + message.content + gpt_prompt_footer
-
     print(prompt)
-
-    #track previous messages in conversation
-    messages.append({"role": "user", "content": prompt})
-    chat_completion = openai.ChatCompletion.create(model="gpt-3.5-turbo", messages=messages)
-    print(chat_completion.choices[0].message.content)
-
-    #discord max message length 2000 - break message into 2000 letter chunks 
-    res_len = len(chat_completion.choices[0].message.content)
-
-    if res_len > DISCORD_MAX_CHARS:
-        sent_char = 0
-        while sent_char < res_len:
-            if (sent_char + DISCORD_MAX_CHARS) < res_len:
-                await message.channel.send(chat_completion.choices[0].message.content[sent_char : sent_char+2000])
-            else:
-                await message.channel.send(chat_completion.choices[0].message.content[sent_char : res_len-1])
-
-            sent_char+=DISCORD_MAX_CHARS
-    else:
-        await message.channel.send(chat_completion.choices[0].message.content)
-
+    await message.channel.send(get_gpt_response(prompt))
     await message.channel.send("End gpt response ")
 
     ##BARD all logic same as gpt##
     await message.channel.send("Begin bard response ")
-
     prompt = bard_prompt_header + message.content + bard_prompt_footer
-
-    print(prompt)
-
-    chat = bard.get_answer(prompt)
-    message_content = chat['content']
-    print(chat)
-
-    res_len = len(message_content)
-
-    if res_len > DISCORD_MAX_CHARS:
-        sent_char = 0
-        while sent_char < res_len:
-            if (sent_char + DISCORD_MAX_CHARS) < res_len:
-                await message.channel.send(message_content[sent_char : sent_char+2000])
-            else:
-                await message.channel.send(message_content[sent_char : res_len-1])
-
-            sent_char+=DISCORD_MAX_CHARS
-    else:
-        await message.channel.send(message_content)
+    print(prompt)    
+    await message.channel.send(get_bard_response(prompt))
 
     await message.channel.send("End bard response ")
 
