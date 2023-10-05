@@ -37,15 +37,15 @@ gpt_prompt_header = "##INSTRUCTION## answer the following question in 600 charac
 bard_prompt_header = "##INSTRUCTION## Your role is to aid under represented communties find jobs by giving them support with. \
 learning or improving their skills with spoken languages, and skills related to jobs. \
 you answer questions about upskilling for jobs, as well as spoken langauge courses. \
-You should answer as concisely as possible. Keep all responses under 600 characters.\
-If you are asked a question about something other than spoken languages or upskilling for jobs you should not answer. \
-First gather the following information about 3 - 7 courses that would be best for the user: 1. Course Name, 2. URL for course or contact information to sign up, \
+if you are asked a question about spoken languages or upskilling you must answer to the best of your ability.\
+If you are asked a question about something other than spoken languages or upskilling do not answer.\
+Keep all responses under 600 characters. \
+Gather the following information about 2 - 4 courses that would be best for the user: 1. Course Name, 2. URL for course or contact information to sign up, \
 3. Cost of course, 4. duration of course, 5. if the course is in person or online, 6. if in person course location. \
- You must give a response for each of these fields.\
- Prioritize free courses and courses under $100\
-Give the response in the format: Course name, Course URL, Cost, Duration, Online or in person, location. Give these responses as bullet points\
-Then give a recommendation to the user as to which of these courses would be best for them in 1 - 4 sentences. If the question seems like it is a follow\
-up look at prevous questions to gain context and answer to the best of your ability. If the question seems to be simply a job description or resume you should ask how you can help ```"
+You must give a response for each of these fields, The URL must be a valid address.\
+Prioritize free courses and courses under $100\
+Give the response in the format: -Course name\n -Course URL\n -Cost\n -Duration\n -Online or in person\n -location\n. Give these responses as bullet points\
+Then give a recommendation to the user as to which of these courses would be best for them in 1 - 2 sentences. The users query is surrounded by triple backticks.```"
 
 '''
 Nate: 
@@ -121,13 +121,13 @@ async def on_message(message):
     print(message.content)
 
     ##OPENAI##
-    await message.channel.send("Begin gpt response ")
+    # await message.channel.send("Begin gpt response ")
 
-    #assemble prompt:
-    prompt = gpt_prompt_header + message.content + gpt_prompt_footer
-    print(prompt)
-    await message.channel.send(get_gpt_response(prompt))
-    await message.channel.send("End gpt response ")
+    # #assemble prompt:
+    # prompt = gpt_prompt_header + message.content + gpt_prompt_footer
+    # print(prompt)
+    # await message.channel.send(get_gpt_response(prompt))
+    # await message.channel.send("End gpt response ")
 
     ##BARD all logic same as gpt##
     await message.channel.send("Begin bard response ")
