@@ -6,6 +6,7 @@ openai
 discord.py
 dotenv
 bardapi
+langchain
 
 Steps to run:
 1. create venv: python -m venv path/to/venv
@@ -14,7 +15,7 @@ Steps to run:
     - pip install openai
     - pip install discord.py
     - pip install dotenv
-    - pip install bardapi
+    - pip install langchain
 4. rename .env.example to .env
     - replace openai api key and discord token with your keys
 5. run: python ai.py
