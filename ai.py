@@ -10,7 +10,7 @@ import discord
 import random
 import os
 from dotenv import load_dotenv
-from bardapi import Bard
+import bardapi
 from datetime import datetime
 
 #load .env values
@@ -24,7 +24,6 @@ DISCORD_MAX_CHARS = 2000
 
 #initialize classes
 client = discord.Client(intents=discord.Intents.default())
-bard = Bard(token = BARD_TOKEN)
 
 #PROMPT ENGINEERING STRINGS:
 #initialize messages for chatgpt:
@@ -36,8 +35,7 @@ messages=[{"role": "system", "content": "Your job is to aid under represented co
 gpt_prompt_header = "##INSTRUCTION## answer the following question in 600 characters or less: question: "
 bard_prompt_header = "##INSTRUCTION## Your role is to aid under represented communties find jobs by giving them support with. \
 learning or improving their skills with spoken languages, and skills related to jobs. \
-you answer questions about upskilling for jobs, as well as spoken langauge courses. \
-if you are asked a question about spoken languages or upskilling you must answer to the best of your ability.\
+if you are asked a question about spoken languages or upskilling classes you must answer to the best of your ability.\
 If you are asked a question about something other than spoken languages or upskilling do not answer.\
 Keep all responses under 600 characters. \
 Gather the following information about 2 - 4 courses that would be best for the user: 1. Course Name, 2. URL for course or contact information to sign up, \
@@ -86,7 +84,7 @@ log_file = open(file_name, "a")
 
 def get_bard_response(prompt):
     try:
-        chat = bard.get_answer(prompt)
+        chat = bardapi.core.Bard(BARD_TOKEN).get_answer(prompt)
         message_content = chat['content']
         print(chat)
         log_file.write(f'{prompt} \n {message_content} \n ----->')
@@ -132,8 +130,12 @@ async def on_message(message):
     ##BARD all logic same as gpt##
     await message.channel.send("Begin bard response ")
     prompt = bard_prompt_header + message.content + bard_prompt_footer
-    print(prompt)    
-    await message.channel.send(get_bard_response(prompt))
+    print(prompt)   
+    try: 
+        await message.channel.send(get_bard_response(prompt))
+    except Exception as err:
+        await message.channel.send("There was an error: ")
+        await message.channel.send(err)
 
     await message.channel.send("End bard response ")
 
