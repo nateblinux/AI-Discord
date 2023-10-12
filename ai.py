@@ -26,13 +26,15 @@ DISCORD_MAX_CHARS = 2000
 client = discord.Client(intents=discord.Intents.default())
 
 #PROMPT ENGINEERING STRINGS:
-#initialize messages for chatgpt:
-messages=[{"role": "system", "content": "Your job is to aid under represented communties find \
- jobs. You should answer questions as concisely as possible. Keep all responses under 600 characters. \
- If you are asked a question about something other than spoken language courses or upskilling for jobs you should not answer. "}]
+
+#store context for bard to allow for multiple messages
+#format for context dictionary userId:messageHistory
+bard_context = {}
 
 #header strings to append to each message:
-gpt_prompt_header = "##INSTRUCTION## answer the following question in 600 characters or less: question: "
+gpt_prompt_header = "##INSTRUCTION## define the type of the following prompt from the following types - resume, job-description, question. \
+Give your response in the following format \'{question_class: type}\' do not give any other information. The prompt is surrounded by triple backticks. ```"
+
 bard_prompt_header = "##INSTRUCTION## Your role is to aid under represented communties find jobs by giving them support with. \
 learning or improving their skills with spoken languages, and skills related to jobs. \
 if you are asked a question about spoken languages or upskilling classes you must answer to the best of your ability.\
@@ -45,37 +47,8 @@ Prioritize free courses and courses under $100\
 Give the response in the format: -Course name\n -Course URL\n -Cost\n -Duration\n -Online or in person\n -location\n. Give these responses as bullet points\
 Then give a recommendation to the user as to which of these courses would be best for them in 1 - 2 sentences. The users query is surrounded by triple backticks.```"
 
-'''
-Nate: 
-1. Keep it short an structured
-2. Must include link
-3. Must include course length
-4. Must include price
-5. Price must be below $100 for the course
-6. Must display if it's in person or online
-
-DeQwon:
-1. Start prompting bot
-2. 75% of videos converted
-3. Have a demo to show
-
-Raghubir:
-1. Integrate discord bot
-2. Schedule meeting with julia
-3. Prompt engineering
-4. Have a demo to show
-5. share with people and find out what is helpful
-
-
-All:
-Keep organized journal of:
-bullet points for weeks
-before we get to week 1
-coalate all of the content into a course on LLM's
-'''
-
 #footer strings:
-gpt_prompt_footer = ""
+gpt_prompt_footer = "```"
 bard_prompt_footer = "```"
 
 #logging info:
@@ -95,8 +68,7 @@ def get_bard_response(prompt):
 def get_gpt_response(prompt):
     global messages
     try:
-        messages.append({"role": "user", "content": prompt})
-        chat_completion = openai.ChatCompletion.create(model="gpt-3.5-turbo", messages=messages)
+        chat_completion = openai.ChatCompletion.create(model="gpt-3.5-turbo", messages=prompt)
         return chat_completion.choices[0].message.content
     except Exception as err:
         return err
@@ -115,17 +87,17 @@ async def on_message(message):
     #dont respond to own messages or empty messages
     if message.author == client.user or not message.content:
         return
+
+    bard_context.update({message.author.id:message.content})
+
+    print(bard_context)
     
     print(message.content)
 
-    ##OPENAI##
-    # await message.channel.send("Begin gpt response ")
+    #classify the prompt:
+    prompt_class = get_gpt_response([{"role" : "user", "content" : gpt_prompt_header + message.content + gpt_prompt_footer}])
 
-    # #assemble prompt:
-    # prompt = gpt_prompt_header + message.content + gpt_prompt_footer
-    # print(prompt)
-    # await message.channel.send(get_gpt_response(prompt))
-    # await message.channel.send("End gpt response ")
+    print(prompt_class)
 
     ##BARD all logic same as gpt##
     await message.channel.send("Begin bard response ")
