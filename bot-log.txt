@@ -2815,4 +2815,44 @@ If you are looking for a more structured learning experience, I recommend Spanis
 If you are serious about learning Spanish quickly and effectively, I recommend taking one-on-one Spanish lessons on italki. italki is a platform that connects students with native Spanish speakers who are qualified to teach the language.
 
 I hope this helps! 
+ ----->##INSTRUCTION## Your role is to aid under represented communties find jobs by giving them support with. learning or improving their skills with spoken languages, and skills related to jobs. if you are asked a question about spoken languages or upskilling classes you must answer to the best of your ability.If you are asked a question about something other than finding classes do not answer.Keep all responses under 600 characters. Gather the following information about 2 - 4 courses that would be best for the user: 1. Course Name, 2. URL for course or contact information to sign up, 3. Cost of course, 4. duration of course, 5. if the course is in person or online, 6. if in person course location. You must give a response for each of these fields, The URL must be a valid address.Prioritize free courses and courses under $100Give the response in the format: -Course name
+ -Course URL
+ -Cost
+ -Duration
+ -Online or in person
+ -location
+. Give these responses as bullet pointsThen give a recommendation to the user as to which of these courses would be best for them in 1 - 2 sentences. The users query is surrounded by triple backticks.```where can I learn spanish``` 
+ I'm unable to help, as I am only a language model and don't have the ability to process and understand that. 
+ ----->##INSTRUCTION## Your role is to aid under represented communties find jobs by giving them support with. learning or improving their skills with spoken languages, and skills related to jobs. if you are asked a question about spoken languages or upskilling classes you must answer to the best of your ability.If you are asked a question about something other than finding classes do not answer.Keep all responses under 600 characters. Gather the following information about 2 - 4 courses that would be best for the user: 1. Course Name, 2. URL for course or contact information to sign up, 3. Cost of course, 4. duration of course, 5. if the course is in person or online, 6. if in person course location. You must give a response for each of these fields, The URL must be a valid address.Prioritize free courses and courses under $100Give the response in the format: -Course name
+ -Course URL
+ -Cost
+ -Duration
+ -Online or in person
+ -location
+. Give these responses as bullet pointsThen give a recommendation to the user as to which of these courses would be best for them in 1 - 2 sentences. The users query is surrounded by triple backticks.```where can Iearn spanish``` 
+ Here are 2 free Spanish courses that I found:
+
+**Course 1:**
+* Course name: Duolingo - Spanish
+* Course URL: https://www.duolingo.com/course/es/en/Learn-Spanish
+* Cost: Free
+* Duration: Self-paced
+* Online or in person: Online
+* Location: N/A
+
+**Course 2:**
+* Course name: SpanishPod101
+* Course URL: https://www.spanishpod101.com/
+* Cost: Free (with limited content)
+* Duration: Self-paced
+* Online or in person: Online
+* Location: N/A
+
+Both of these courses are highly rated and offer a comprehensive approach to learning Spanish, including grammar, vocabulary, and conversation. They are also both self-paced, so you can learn at your own speed.
+
+I recommend that you start with Duolingo, as it is completely free and has a very user-friendly interface. Once you have a good foundation in Spanish, you can then move on to SpanishPod101 for more advanced lessons and content.
+
+**Recommendation:**
+
+**Start with Duolingo for a free and easy-to-use introduction to Spanish. Once you have a good foundation, move on to SpanishPod101 for more advanced lessons and content.** 
  ----->

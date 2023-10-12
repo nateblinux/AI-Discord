@@ -95,9 +95,9 @@ async def on_message(message):
     print(message.content)
 
     #classify the prompt:
-    #prompt_class = get_gpt_response([{"role" : "user", "content" : gpt_prompt_header + message.content + gpt_prompt_footer}])
+    prompt_class = get_gpt_response([{"role" : "user", "content" : gpt_prompt_header + message.content + gpt_prompt_footer}])
 
-    #print(prompt_class)
+    print(prompt_class)
 
     ##BARD all logic same as gpt##
     await message.channel.send("Begin bard response ")
