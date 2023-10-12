@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 '''
 Jobs for humanity discord bot for upskilling/language and housing support using chatgpt and/or google bard
-Version: 0.0.1
+Version: 0.1.0
 Author: Nathan Benham
 '''
 
@@ -95,9 +95,9 @@ async def on_message(message):
     print(message.content)
 
     #classify the prompt:
-    prompt_class = get_gpt_response([{"role" : "user", "content" : gpt_prompt_header + message.content + gpt_prompt_footer}])
+    #prompt_class = get_gpt_response([{"role" : "user", "content" : gpt_prompt_header + message.content + gpt_prompt_footer}])
 
-    print(prompt_class)
+    #print(prompt_class)
 
     ##BARD all logic same as gpt##
     await message.channel.send("Begin bard response ")
