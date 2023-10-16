@@ -88,6 +88,15 @@ async def on_message(message):
     if message.author == client.user or not message.content:
         return
 
+    if(message.content == "/reset"):
+        if(message.author.id in bard_context):
+            del bard_context[message.author.id]
+            await message.channel.send(f"<@{message.author.id}> Your conversation has been reset")
+            return
+        else:
+            await message.channel.send(f"<@{message.author.id}> You have no conversation history")
+            return
+
     if(message.author.id in bard_context):
         bard_context[message.author.id].append(message.content)
     else:
@@ -119,8 +128,8 @@ async def on_message(message):
             await message.channel.send(f"<@{message.author.id}> There was an error: {err}")
 
     else:
-        await message.channel.send(f"<@{message.author.id}> That does not appear to be a question but I will remember it for future answers. Keep in mind I can only process about 4000 characters\
-        So I only know our most recent messages")
+        await message.channel.send(f"<@{message.author.id}> That does not appear to be a question but I will remember it for future answers. Keep in mind I can only process about 4000 characters 
+        So I only know our most recent messages. You can reset your conversation history with /reset ")
 
 
 client.run(DISCORD_TOKEN)
