@@ -32,8 +32,8 @@ client = discord.Client(intents=discord.Intents.default())
 bard_context = {}
 
 #header strings to append to each message:
-gpt_prompt_header = "##INSTRUCTION## define the type of the following prompt from the following types - resume, job-description, question. \
-Give your response in the following format \'{question_class: type}\' do not give any other information. The prompt is surrounded by triple backticks. ```"
+gpt_prompt_header = "##INSTRUCTION## define the type of the following prompt as either a question or none. \
+Give your response in the following format \'{class: type}\' do not give any other information. The prompt is surrounded by triple backticks. ```"
 
 bard_prompt_header = "##INSTRUCTION## Your role is to aid under represented communties find jobs by giving them support with. \
 learning or improving their skills with spoken languages, and skills related to jobs. \
@@ -88,27 +88,39 @@ async def on_message(message):
     if message.author == client.user or not message.content:
         return
 
-    bard_context.update({message.author.id:message.content})
+    if(message.author.id in bard_context):
+        bard_context[message.author.id].append(message.content)
+    else:
+        bard_context.update({message.author.id:[message.content]})
 
-    print(bard_context)
+    print(bard_context[message.author.id])
+
+    prompt_str = ' '.join(bard_context[message.author.id])
+
+    while(len(prompt_str) > 4000):
+        bard_context[message.author.id].pop(0)
+        prompt_str = ' '.join(bard_context[message.author.id])
     
-    print(message.content)
+    print(prompt_str)
 
     #classify the prompt:
     prompt_class = get_gpt_response([{"role" : "user", "content" : gpt_prompt_header + message.content + gpt_prompt_footer}])
 
     print(prompt_class)
 
-    ##BARD all logic same as gpt##
-    await message.channel.send("Begin bard response ")
-    prompt = bard_prompt_header + message.content + bard_prompt_footer
-    print(prompt)   
-    try: 
-        await message.channel.send(get_bard_response(prompt))
-    except Exception as err:
-        await message.channel.send("There was an error: ")
-        await message.channel.send(err)
+    if("question" in prompt_class):
+        prompt = bard_prompt_header + prompt_str + bard_prompt_footer
+        #print(prompt)   
+        try: 
+            bard_res = get_bard_response(prompt)
+            bard_context[message.author.id].append(bard_res)
+            await message.channel.send(f"<@{message.author.id}> {bard_res}")
+        except Exception as err:
+            await message.channel.send(f"<@{message.author.id}> There was an error: {err}")
 
-    await message.channel.send("End bard response ")
+    else:
+        await message.channel.send(f"<@{message.author.id}> That does not appear to be a question but I will remember it for future answers. Keep in mind I can only process about 4000 characters\
+        So I only know our most recent messages")
+
 
 client.run(DISCORD_TOKEN)
