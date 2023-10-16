@@ -28,7 +28,7 @@ client = discord.Client(intents=discord.Intents.default())
 #PROMPT ENGINEERING STRINGS:
 
 #store context for bard to allow for multiple messages
-#format for context dictionary userId:messageHistory
+#format for context dictionary userId:[messageHistory]
 bard_context = {}
 
 #header strings to append to each message:
@@ -88,6 +88,7 @@ async def on_message(message):
     if message.author == client.user or not message.content:
         return
 
+    #reset command for message history
     if(message.content == "/reset"):
         if(message.author.id in bard_context):
             del bard_context[message.author.id]
@@ -97,36 +98,45 @@ async def on_message(message):
             await message.channel.send(f"<@{message.author.id}> You have no conversation history")
             return
 
+    #add to message history
     if(message.author.id in bard_context):
         bard_context[message.author.id].append(message.content)
     else:
         bard_context.update({message.author.id:[message.content]})
 
-    print(bard_context[message.author.id])
+    #print(bard_context[message.author.id])
 
+    #convert history array to string
     prompt_str = ' '.join(bard_context[message.author.id])
 
+    #pop oldest messages from history
     while(len(prompt_str) > 4000):
         bard_context[message.author.id].pop(0)
         prompt_str = ' '.join(bard_context[message.author.id])
     
-    print(prompt_str)
+    #print(prompt_str)
 
-    #classify the prompt:
+    #classify the prompt as either question or none:
     prompt_class = get_gpt_response([{"role" : "user", "content" : gpt_prompt_header + message.content + gpt_prompt_footer}])
 
-    print(prompt_class)
+    #print(prompt_class)
 
+    #if gpt classifies prompt as question:
     if("question" in prompt_class):
         prompt = bard_prompt_header + prompt_str + bard_prompt_footer
         #print(prompt)   
+
+        #try catch for bard response 
         try: 
+            #get response, add to context, send message to user
             bard_res = get_bard_response(prompt)
             bard_context[message.author.id].append(bard_res)
             await message.channel.send(f"<@{message.author.id}> {bard_res}")
         except Exception as err:
+            #tell user if there was an error
             await message.channel.send(f"<@{message.author.id}> There was an error: {err}")
 
+    #if not question send static message 
     else:
         await message.channel.send(f"<@{message.author.id}> That does not appear to be a question but I will remember it for future answers. Keep in mind I can only process about 4000 characters 
         So I only know our most recent messages. You can reset your conversation history with /reset ")
