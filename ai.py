@@ -32,8 +32,9 @@ client = discord.Client(intents=discord.Intents.default())
 bard_context = {}
 
 #header strings to append to each message:
-gpt_prompt_header = "##INSTRUCTION## define the type of the following prompt as either a question or none. \
-Give your response in the following format \'{class: type}\' do not give any other information. The prompt is surrounded by triple backticks. ```"
+gpt_prompt_header = "##INSTRUCTION## define the type of the following prompt as either a question, resume, job-description, or unknown. Questions may be surrounded by job descriptions or \
+resume items.  \
+Give your response in the following format \'type\' do not give any other information. The prompt is surrounded by triple backticks. ```"
 
 bard_prompt_header = "##INSTRUCTION## Your role is to aid under represented communties find jobs by giving them support with. \
 learning or improving their skills with spoken languages, and skills related to jobs. \
@@ -97,6 +98,15 @@ async def on_message(message):
         else:
             await message.channel.send(f"<@{message.author.id}> You have no conversation history")
             return
+            
+    #classify prompt
+    prompt_class = get_gpt_response([{"role" : "user", "content" : gpt_prompt_header + message.content + gpt_prompt_footer}])
+
+    #dont respond to unknown type prompts
+    if "unknown" in prompt_class:
+        await message.channel.send(f"<@{message.author.id}> That does not appear to be related to jobs or upskilling. This will not be remembered for the conversation.")
+        return
+
 
     #add to message history
     if(message.author.id in bard_context):
@@ -116,10 +126,7 @@ async def on_message(message):
     
     #print(prompt_str)
 
-    #classify the prompt as either question or none:
-    prompt_class = get_gpt_response([{"role" : "user", "content" : gpt_prompt_header + message.content + gpt_prompt_footer}])
-
-    #print(prompt_class)
+    print(prompt_class)
 
     #if gpt classifies prompt as question:
     if("question" in prompt_class):
@@ -138,7 +145,7 @@ async def on_message(message):
 
     #if not question send static message 
     else:
-        await message.channel.send(f"<@{message.author.id}> That does not appear to be a question but I will remember it for future answers. Keep in mind I can only process about 4000 characters So I only know our most recent messages. You can reset your conversation history with /reset ")
+        await message.channel.send(f"<@{message.author.id}> That appears to be a {prompt_class} I will remember it for future answers. Keep in mind I can only process about 4000 characters So I only know our most recent messages. You can reset your conversation history with /reset ")
 
 
 client.run(DISCORD_TOKEN)
