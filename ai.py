@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 '''
 Jobs for humanity discord bot for upskilling/language and housing support using chatgpt and/or google bard
-Version: 0.1.0
+Version: 0.1.1
 Author: Nathan Benham
 '''
 
@@ -138,8 +138,7 @@ async def on_message(message):
 
     #if not question send static message 
     else:
-        await message.channel.send(f"<@{message.author.id}> That does not appear to be a question but I will remember it for future answers. Keep in mind I can only process about 4000 characters 
-        So I only know our most recent messages. You can reset your conversation history with /reset ")
+        await message.channel.send(f"<@{message.author.id}> That does not appear to be a question but I will remember it for future answers. Keep in mind I can only process about 4000 characters So I only know our most recent messages. You can reset your conversation history with /reset ")
 
 
 client.run(DISCORD_TOKEN)
