@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 '''
 Jobs for humanity discord bot for upskilling/language and housing support using chatgpt and/or google bard
-Version: 0.0.1
+Version: 0.1.1
 Author: Nathan Benham
 '''
 
@@ -10,7 +10,7 @@ import discord
 import random
 import os
 from dotenv import load_dotenv
-from bardapi import Bard
+import bardapi
 from datetime import datetime
 
 #load .env values
@@ -24,60 +24,32 @@ DISCORD_MAX_CHARS = 2000
 
 #initialize classes
 client = discord.Client(intents=discord.Intents.default())
-bard = Bard(token = BARD_TOKEN)
 
 #PROMPT ENGINEERING STRINGS:
-#initialize messages for chatgpt:
-messages=[{"role": "system", "content": "Your job is to aid under represented communties find \
- jobs. You should answer questions as concisely as possible. Keep all responses under 600 characters. \
- If you are asked a question about something other than spoken language courses or upskilling for jobs you should not answer. "}]
+
+#store context for bard to allow for multiple messages
+#format for context dictionary userId:[messageHistory]
+bard_context = {}
 
 #header strings to append to each message:
-gpt_prompt_header = "##INSTRUCTION## answer the following question in 600 characters or less: question: "
+gpt_prompt_header = "##INSTRUCTION## define the type of the following prompt as either a question, resume, job-description, or unknown. Questions may be surrounded by job descriptions or \
+resume items.  \
+Give your response in the following format \'type\' do not give any other information. The prompt is surrounded by triple backticks. ```"
+
 bard_prompt_header = "##INSTRUCTION## Your role is to aid under represented communties find jobs by giving them support with. \
 learning or improving their skills with spoken languages, and skills related to jobs. \
-you answer questions about upskilling for jobs, as well as spoken langauge courses. \
-You should answer as concisely as possible. Keep all responses under 600 characters.\
-If you are asked a question about something other than spoken languages or upskilling for jobs you should not answer. \
-First gather the following information about 3 - 7 courses that would be best for the user: 1. Course Name, 2. URL for course or contact information to sign up, \
+if you are asked a question about spoken languages or upskilling classes you must answer to the best of your ability.\
+If you are asked a question about something other than finding classes do not answer.\
+Keep all responses under 600 characters. \
+Gather the following information about 2 - 4 courses that would be best for the user: 1. Course Name, 2. URL for course or contact information to sign up, \
 3. Cost of course, 4. duration of course, 5. if the course is in person or online, 6. if in person course location. \
- You must give a response for each of these fields.\
- Prioritize free courses and courses under $100\
-Give the response in the format: Course name, Course URL, Cost, Duration, Online or in person, location. Give these responses as bullet points\
-Then give a recommendation to the user as to which of these courses would be best for them in 1 - 4 sentences. If the question seems like it is a follow\
-up look at prevous questions to gain context and answer to the best of your ability. If the question seems to be simply a job description or resume you should ask how you can help ```"
-
-'''
-Nate: 
-1. Keep it short an structured
-2. Must include link
-3. Must include course length
-4. Must include price
-5. Price must be below $100 for the course
-6. Must display if it's in person or online
-
-DeQwon:
-1. Start prompting bot
-2. 75% of videos converted
-3. Have a demo to show
-
-Raghubir:
-1. Integrate discord bot
-2. Schedule meeting with julia
-3. Prompt engineering
-4. Have a demo to show
-5. share with people and find out what is helpful
-
-
-All:
-Keep organized journal of:
-bullet points for weeks
-before we get to week 1
-coalate all of the content into a course on LLM's
-'''
+You must give a response for each of these fields, The URL must be a valid address.\
+Prioritize free courses and courses under $100\
+Give the response in the format: -Course name\n -Course URL\n -Cost\n -Duration\n -Online or in person\n -location\n. Give these responses as bullet points\
+Then give a recommendation to the user as to which of these courses would be best for them in 1 - 2 sentences. The users query is surrounded by triple backticks.```"
 
 #footer strings:
-gpt_prompt_footer = ""
+gpt_prompt_footer = "```"
 bard_prompt_footer = "```"
 
 #logging info:
@@ -86,7 +58,7 @@ log_file = open(file_name, "a")
 
 def get_bard_response(prompt):
     try:
-        chat = bard.get_answer(prompt)
+        chat = bardapi.core.Bard(BARD_TOKEN).get_answer(prompt)
         message_content = chat['content']
         print(chat)
         log_file.write(f'{prompt} \n {message_content} \n ----->')
@@ -97,8 +69,7 @@ def get_bard_response(prompt):
 def get_gpt_response(prompt):
     global messages
     try:
-        messages.append({"role": "user", "content": prompt})
-        chat_completion = openai.ChatCompletion.create(model="gpt-3.5-turbo", messages=messages)
+        chat_completion = openai.ChatCompletion.create(model="gpt-3.5-turbo", messages=prompt)
         return chat_completion.choices[0].message.content
     except Exception as err:
         return err
@@ -117,24 +88,64 @@ async def on_message(message):
     #dont respond to own messages or empty messages
     if message.author == client.user or not message.content:
         return
+
+    #reset command for message history
+    if(message.content == "/reset"):
+        if(message.author.id in bard_context):
+            del bard_context[message.author.id]
+            await message.channel.send(f"<@{message.author.id}> Your conversation has been reset")
+            return
+        else:
+            await message.channel.send(f"<@{message.author.id}> You have no conversation history")
+            return
+            
+    #classify prompt
+    prompt_class = get_gpt_response([{"role" : "user", "content" : gpt_prompt_header + message.content + gpt_prompt_footer}])
+
+    #dont respond to unknown type prompts
+    if "unknown" in prompt_class:
+        await message.channel.send(f"<@{message.author.id}> That does not appear to be related to jobs or upskilling. This will not be remembered for the conversation.")
+        return
+
+
+    #add to message history
+    if(message.author.id in bard_context):
+        bard_context[message.author.id].append(message.content)
+    else:
+        bard_context.update({message.author.id:[message.content]})
+
+    #print(bard_context[message.author.id])
+
+    #convert history array to string
+    prompt_str = ' '.join(bard_context[message.author.id])
+
+    #pop oldest messages from history
+    while(len(prompt_str) > 4000):
+        bard_context[message.author.id].pop(0)
+        prompt_str = ' '.join(bard_context[message.author.id])
     
-    print(message.content)
+    #print(prompt_str)
 
-    ##OPENAI##
-    await message.channel.send("Begin gpt response ")
+    print(prompt_class)
 
-    #assemble prompt:
-    prompt = gpt_prompt_header + message.content + gpt_prompt_footer
-    print(prompt)
-    await message.channel.send(get_gpt_response(prompt))
-    await message.channel.send("End gpt response ")
+    #if gpt classifies prompt as question:
+    if("question" in prompt_class):
+        prompt = bard_prompt_header + prompt_str + bard_prompt_footer
+        #print(prompt)   
 
-    ##BARD all logic same as gpt##
-    await message.channel.send("Begin bard response ")
-    prompt = bard_prompt_header + message.content + bard_prompt_footer
-    print(prompt)    
-    await message.channel.send(get_bard_response(prompt))
+        #try catch for bard response 
+        try: 
+            #get response, add to context, send message to user
+            bard_res = get_bard_response(prompt)
+            bard_context[message.author.id].append(bard_res)
+            await message.channel.send(f"<@{message.author.id}> {bard_res}")
+        except Exception as err:
+            #tell user if there was an error
+            await message.channel.send(f"<@{message.author.id}> There was an error: {err}")
 
-    await message.channel.send("End bard response ")
+    #if not question send static message 
+    else:
+        await message.channel.send(f"<@{message.author.id}> That appears to be a {prompt_class} I will remember it for future answers. Keep in mind I can only process about 4000 characters So I only know our most recent messages. You can reset your conversation history with /reset ")
+
 
 client.run(DISCORD_TOKEN)
