@@ -24,7 +24,7 @@ palm.configure(api_key=PALM_KEY)
 
 #PROMPT ENGINEERING STRINGS:
 
-#store context for bard to allow for multiple messages
+#store context for text-bison to allow for multiple messages
 #format for context dictionary userId:[messageHistory]
 bot_users = {}
 
@@ -52,28 +52,8 @@ palm_prompt_footer = "```"
 file_name = "bot-log.txt"
 log_file = open(file_name, "a")
 
-models = [m for m in palm.list_models()]
-print(models)
 
-
-def get_bard_response(prompt):
-    try:
-        chat = bardapi.core.Bard(BARD_TOKEN).get_answer(prompt)
-        message_content = chat['content']
-        print(chat)
-        log_file.write(f'{prompt} \n {message_content} \n ----->')
-        return message_content
-    except Exception as err:
-        return err
-
-def get_gpt_response(prompt):
-    global messages
-    try:
-        chat_completion = openai.ChatCompletion.create(model="gpt-3.5-turbo", messages=prompt)
-        return chat_completion.choices[0].message.content
-    except Exception as err:
-        return err
-
+#get the palm response temperature 0 means no creativity
 def get_palm_response(prompt):
     global palm_users
     try:
@@ -104,6 +84,7 @@ async def on_message(message):
     if message.author == client.user or not message.content:
         return
 
+    #dont tag user in private channel ie DMing bot
     if(message.channel.type != discord.ChannelType.private):
         user_tag = f"<@{message.author.id}>"
         
@@ -119,6 +100,7 @@ async def on_message(message):
             return
 
 
+    #add message to user history
     if message.author.id in bot_users: 
         bot_users[message.author.id].append(f"user asked: {message.content},")
     else:
@@ -127,9 +109,10 @@ async def on_message(message):
     print(bot_users)
     ##palm test code
 
+    #convert array for history to string
     context_str = ' '.join(bot_users[message.author.id])
 
-    #keep context under token limit by deleting oldest messages
+    #keep context under token limit by deleting oldest messages + regenerating string
     while(len(context_str) > TOKEN_LIMIT):
         try:
             bot_users[message.author.id].pop(0)
@@ -138,15 +121,14 @@ async def on_message(message):
         except:
             await message.channel.send(f"{user_tag} There was an error try /reset to reset your conversation")
 
-    print(context_str)
-
+    #create prompt and get response
     prompt = palm_prompt_header + context_str + palm_prompt_footer
     bot_res = get_palm_response(prompt)
 
+    #add response to message history
     bot_users[message.author.id].append(f"bot responded: {bot_res},")
 
-    print(message.channel.type)
-
+    #message user bot response
     await message.channel.send(f"{user_tag}{bot_res}")
 
 
