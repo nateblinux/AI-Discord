@@ -1,42 +1,37 @@
 #!/usr/bin/env python
 '''
-Jobs for humanity discord bot for upskilling/language and housing support using chatgpt and/or google bard
-Version: 0.1.1
-Author: Nathan Benham
+Jobs for humanity discord bot for upskilling/language and housing support using PaLM
+Copyright 2023 Nathan Benham
 '''
-
-import openai
 import discord
 import random
 import os
 from dotenv import load_dotenv
-import bardapi
+import google.generativeai as palm
 from datetime import datetime
+import re
 
 #load .env values
 load_dotenv()
-openai.api_key = os.getenv('OPEN_AI_KEY')
 DISCORD_TOKEN = os.getenv('DISCORD_TOKEN')
-BARD_TOKEN = os.getenv('BARD_TOKEN')
+PALM_KEY = os.getenv('PALM_KEY')
 
-#max characters that discord allows per message
-DISCORD_MAX_CHARS = 2000
-
+#token limit for PaLM text-bison-001 (1 token ~= 4 chars 8196 tokens max)
+TOKEN_LIMIT = 8000 * 4
 #initialize classes
 client = discord.Client(intents=discord.Intents.default())
 
+palm.configure(api_key=PALM_KEY)
+
+
 #PROMPT ENGINEERING STRINGS:
 
-#store context for bard to allow for multiple messages
+#store context for text-bison to allow for multiple messages
 #format for context dictionary userId:[messageHistory]
-bard_context = {}
+bot_users = {}
 
 #header strings to append to each message:
-gpt_prompt_header = "##INSTRUCTION## define the type of the following prompt as either a question, resume, job-description, or unknown. Questions may be surrounded by job descriptions or \
-resume items.  \
-Give your response in the following format \'type\' do not give any other information. The prompt is surrounded by triple backticks. ```"
-
-bard_prompt_header = "##INSTRUCTION## Your role is to aid under represented communties find jobs by giving them support with. \
+palm_prompt_header = "##INSTRUCTION## Your role is to aid under represented communties find jobs by giving them support with. \
 learning or improving their skills with spoken languages, and skills related to jobs. \
 if you are asked a question about spoken languages or upskilling classes you must answer to the best of your ability.\
 If you are asked a question about something other than finding classes do not answer.\
@@ -46,31 +41,31 @@ Gather the following information about 2 - 4 courses that would be best for the 
 You must give a response for each of these fields, The URL must be a valid address.\
 Prioritize free courses and courses under $100\
 Give the response in the format: -Course name\n -Course URL\n -Cost\n -Duration\n -Online or in person\n -location\n. Give these responses as bullet points\
-Then give a recommendation to the user as to which of these courses would be best for them in 1 - 2 sentences. The users query is surrounded by triple backticks.```"
+Then give a recommendation to the user as to which of these courses would be best for them in 1 - 2 sentences. The users conversation is surrounded by triple backticks.\
+The parts of the query may contain previous bot responses labeled as bot responded, The users questions are labeled as user asked. Do not say bot responded or user asked\
+in your response```"
+
+
 
 #footer strings:
-gpt_prompt_footer = "```"
-bard_prompt_footer = "```"
+palm_prompt_footer = "```"
 
 #logging info:
-file_name = "bot-log.txt"
-log_file = open(file_name, "a")
+file_name = f"bot-log-{datetime.now().isoformat()}.xml"
 
-def get_bard_response(prompt):
-    try:
-        chat = bardapi.core.Bard(BARD_TOKEN).get_answer(prompt)
-        message_content = chat['content']
-        print(chat)
-        log_file.write(f'{prompt} \n {message_content} \n ----->')
-        return message_content
-    except Exception as err:
-        return err
+with open(file_name,'w') as log_file:
+    log_file.write(f"<root>\n</root>") #do not change this it will mess up the formating of the log files
 
-def get_gpt_response(prompt):
-    global messages
+#get the palm response temperature 0 means no creativity
+def get_palm_response(prompt):
     try:
-        chat_completion = openai.ChatCompletion.create(model="gpt-3.5-turbo", messages=prompt)
-        return chat_completion.choices[0].message.content
+        response = palm.generate_text(
+            model='models/text-bison-001',
+            prompt=prompt,
+            temperature=0
+        )
+        print(response)
+        return response.result
     except Exception as err:
         return err
 
@@ -85,67 +80,79 @@ async def on_ready():
 @client.event
 async def on_message(message):
 
+    user_tag = ""
+
     #dont respond to own messages or empty messages
     if message.author == client.user or not message.content:
         return
 
+    #dont tag user in private channel ie DMing bot
+    if(message.channel.type != discord.ChannelType.private):
+        user_tag = f"<@{message.author.id}>"
+        
+
     #reset command for message history
     if(message.content == "/reset"):
-        if(message.author.id in bard_context):
-            del bard_context[message.author.id]
-            await message.channel.send(f"<@{message.author.id}> Your conversation has been reset")
+        if(message.author.id in bot_users):
+            del bot_users[message.author.id]
+            await message.channel.send(f"{user_tag} Your conversation has been reset")
             return
         else:
-            await message.channel.send(f"<@{message.author.id}> You have no conversation history")
+            await message.channel.send(f"{user_tag} You have no conversation history")
             return
-            
-    #classify prompt
-    prompt_class = get_gpt_response([{"role" : "user", "content" : gpt_prompt_header + message.content + gpt_prompt_footer}])
-
-    #dont respond to unknown type prompts
-    if "unknown" in prompt_class:
-        await message.channel.send(f"<@{message.author.id}> That does not appear to be related to jobs or upskilling. This will not be remembered for the conversation.")
-        return
 
 
-    #add to message history
-    if(message.author.id in bard_context):
-        bard_context[message.author.id].append(message.content)
+    #add message to user history
+    if message.author.id in bot_users: 
+        bot_users[message.author.id].append(f"user asked: {message.content},")
     else:
-        bard_context.update({message.author.id:[message.content]})
+        bot_users.update({message.author.id:[f"user asked: {message.content},"]})
 
-    #print(bard_context[message.author.id])
+    print(bot_users)
+    ##palm test code
 
-    #convert history array to string
-    prompt_str = ' '.join(bard_context[message.author.id])
+    #convert array for history to string
+    context_str = ' '.join(bot_users[message.author.id])
 
-    #pop oldest messages from history
-    while(len(prompt_str) > 4000):
-        bard_context[message.author.id].pop(0)
-        prompt_str = ' '.join(bard_context[message.author.id])
-    
-    #print(prompt_str)
+    #keep context under token limit by deleting oldest messages + regenerating string
+    while(len(context_str) > TOKEN_LIMIT):
+        try:
+            bot_users[message.author.id].pop(0)
+            bot_users[message.author.id].pop(1)
+            context_str = ' '.join(bot_users[message.author.id])
+        except:
+            await message.channel.send(f"{user_tag} There was an error try /reset to reset your conversation")
 
-    print(prompt_class)
+    #create prompt and get response
+    prompt = palm_prompt_header + context_str + palm_prompt_footer
+    bot_res = get_palm_response(prompt)
 
-    #if gpt classifies prompt as question:
-    if("question" in prompt_class):
-        prompt = bard_prompt_header + prompt_str + bard_prompt_footer
-        #print(prompt)   
+    #add response to message history
+    bot_users[message.author.id].append(f"bot responded: {bot_res},")
 
-        #try catch for bard response 
-        try: 
-            #get response, add to context, send message to user
-            bard_res = get_bard_response(prompt)
-            bard_context[message.author.id].append(bard_res)
-            await message.channel.send(f"<@{message.author.id}> {bard_res}")
-        except Exception as err:
-            #tell user if there was an error
-            await message.channel.send(f"<@{message.author.id}> There was an error: {err}")
+    #message user bot response
+    await message.channel.send(f"{user_tag}{bot_res}")
 
-    #if not question send static message 
-    else:
-        await message.channel.send(f"<@{message.author.id}> That appears to be a {prompt_class} I will remember it for future answers. Keep in mind I can only process about 4000 characters So I only know our most recent messages. You can reset your conversation history with /reset ")
+    #do not change mode from r+
+    with open(file_name,"r+") as log_file:
+        #seek to end of file and then back 7 chars for </root> so that it overwrites the file
+        log_file.seek(0, os.SEEK_END)
+        log_file.seek(log_file.tell() - 7, os.SEEK_SET)
+        log_file.write(f"""
+            <message>
+                <time>{datetime.now().isoformat()}</time>
+                <author>
+                    <id>{message.author.id}</id>
+                    <name>{message.author}</name>
+                </author>
+                <content>
+                    <question>{message.content}</question>
+                    <prompt>{prompt}</prompt>
+                    <response>{bot_res}</response>
+                </content>
+            </message>
+            </root>""") #message xml
+
 
 
 client.run(DISCORD_TOKEN)
