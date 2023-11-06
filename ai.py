@@ -1,13 +1,15 @@
 #!/usr/bin/env python
 '''
 Jobs for humanity discord bot for upskilling/language and housing support using PaLM
-Author: Nathan Benham
+Copyright 2023 Nathan Benham
 '''
 import discord
 import random
 import os
 from dotenv import load_dotenv
 import google.generativeai as palm
+from datetime import datetime
+import re
 
 #load .env values
 load_dotenv()
@@ -49,13 +51,13 @@ in your response```"
 palm_prompt_footer = "```"
 
 #logging info:
-file_name = "bot-log.txt"
-log_file = open(file_name, "a")
+file_name = f"bot-log-{datetime.now().isoformat()}.xml"
 
+with open(file_name,'w') as log_file:
+    log_file.write(f"<root>\n</root>") #do not change this it will mess up the formating of the log files
 
 #get the palm response temperature 0 means no creativity
 def get_palm_response(prompt):
-    global palm_users
     try:
         response = palm.generate_text(
             model='models/text-bison-001',
@@ -130,6 +132,27 @@ async def on_message(message):
 
     #message user bot response
     await message.channel.send(f"{user_tag}{bot_res}")
+
+    #do not change mode from r+
+    with open(file_name,"r+") as log_file:
+        #seek to end of file and then back 7 chars for </root> so that it overwrites the file
+        log_file.seek(0, os.SEEK_END)
+        log_file.seek(log_file.tell() - 7, os.SEEK_SET)
+        log_file.write(f"""
+            <message>
+                <time>{datetime.now().isoformat()}</time>
+                <author>
+                    <id>{message.author.id}</id>
+                    <name>{message.author}</name>
+                </author>
+                <content>
+                    <question>{message.content}</question>
+                    <prompt>{prompt}</prompt>
+                    <response>{bot_res}</response>
+                </content>
+            </message>
+            </root>""") #message xml
+
 
 
 client.run(DISCORD_TOKEN)
