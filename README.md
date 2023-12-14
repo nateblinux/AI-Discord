@@ -2,7 +2,6 @@ Discord bot for gpt
 
 requires:
 python3
-openai
 discord.py
 dotenv
 bardapi
@@ -15,5 +14,5 @@ Steps to run:
     - pip install discord.py
     - pip install dotenv
 4. rename .env.example to .env
-    - replace openai api key and discord token with your keys
+    - replace palm api key and discord token with your keys
 5. run: python ai.py

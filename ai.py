@@ -151,7 +151,7 @@ async def on_message(message):
                     <response>{bot_res}</response>
                 </content>
             </message>
-            </root>""") #message xml
+            </root>""") #message xml be careful making changes as it can mess up the xml formatting
 
 
 
