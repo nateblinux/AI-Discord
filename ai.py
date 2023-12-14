@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 '''
 Jobs for humanity discord bot for upskilling/language and housing support using PaLM
-Copyright 2023 Nathan Benham
+Copyright 2023 Nathan Benham, Jobs for Humanity
 '''
 import discord
 import random
